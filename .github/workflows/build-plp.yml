@@ -1,8 +1,8 @@
-name: Build poulpes
+name: Build plp
 
 on:
   push:
-    branches: [poulpes]
+    branches: [PLP]
   workflow_dispatch:
 
 permissions:
@@ -10,7 +10,7 @@ permissions:
   packages: write
 
 concurrency:
-  group: build-poulpes-${{ github.ref }}
+  group: build-plp-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -30,6 +30,7 @@ jobs:
         run: |
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
+          echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -52,12 +53,12 @@ jobs:
           file: Dockerfile
           pull: true
           platforms: ${{ matrix.platform }}
-          cache-from: type=gha,scope=poulpes-backend-${{ env.PLATFORM_PAIR }}
-          cache-to: type=gha,mode=max,scope=poulpes-backend-${{ env.PLATFORM_PAIR }}
+          cache-from: type=gha,scope=plp-backend-${{ env.PLATFORM_PAIR }}
+          cache-to: type=gha,mode=max,scope=plp-backend-${{ env.PLATFORM_PAIR }}
           build-args: |
-            VERSION=poulpes-${{ github.sha }}
+            VERSION=plp-${{ github.sha }}
             COMMIT=${{ github.sha }}
-          outputs: type=image,name=ghcr.io/${{ github.repository_owner }}/multica-backend,push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=ghcr.io/${{ env.OWNER }}/multica-backend,push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
         run: |
@@ -77,6 +78,9 @@ jobs:
     needs: build-backend
     runs-on: ubuntu-latest
     steps:
+      - name: Set lowercase owner
+        run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
@@ -100,8 +104,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/multica-backend:poulpes
-            ghcr.io/${{ github.repository_owner }}/multica-backend:poulpes-${{ github.sha }}
+            ghcr.io/${{ env.OWNER }}/multica-backend:plp
+            ghcr.io/${{ env.OWNER }}/multica-backend:plp-${{ github.sha }}
           provenance: false
 
   # ── FRONTEND ───────────────────────────────────────────────────────────────────
@@ -120,6 +124,7 @@ jobs:
         run: |
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
+          echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -142,11 +147,11 @@ jobs:
           file: Dockerfile.web
           pull: true
           platforms: ${{ matrix.platform }}
-          cache-from: type=gha,scope=poulpes-frontend-${{ env.PLATFORM_PAIR }}
-          cache-to: type=gha,mode=max,scope=poulpes-frontend-${{ env.PLATFORM_PAIR }}
+          cache-from: type=gha,scope=plp-frontend-${{ env.PLATFORM_PAIR }}
+          cache-to: type=gha,mode=max,scope=plp-frontend-${{ env.PLATFORM_PAIR }}
           build-args: |
-            NEXT_PUBLIC_APP_VERSION=poulpes-${{ github.sha }}
-          outputs: type=image,name=ghcr.io/${{ github.repository_owner }}/multica-web,push-by-digest=true,name-canonical=true,push=true
+            NEXT_PUBLIC_APP_VERSION=plp-${{ github.sha }}
+          outputs: type=image,name=ghcr.io/${{ env.OWNER }}/multica-web,push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
         run: |
@@ -166,6 +171,9 @@ jobs:
     needs: build-frontend
     runs-on: ubuntu-latest
     steps:
+      - name: Set lowercase owner
+        run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
@@ -189,6 +197,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/multica-web:poulpes
-            ghcr.io/${{ github.repository_owner }}/multica-web:poulpes-${{ github.sha }}
+            ghcr.io/${{ env.OWNER }}/multica-web:plp
+            ghcr.io/${{ env.OWNER }}/multica-web:plp-${{ github.sha }}
           provenance: false
